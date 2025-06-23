@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Insect Classifier</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f8ff;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    h4 {
+      color: #666;
+      margin-top: 0;
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      width: 300px;
+      height: 450px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    #modelSelect {
+      margin: 10px 0;
+      padding: 5px;
+      font-size: 14px;
+    }
+    #preview {
+      max-width: 90%;
+      max-height: 150px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      margin-bottom: 10px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .loading {
+      display: none;
+      margin-top: 10px;
+      font-style: italic;
+      color: #555;
+    }
+    #result {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-top: 20px;
+      white-space: pre-line;
+    }
+    #description::before {
+  content: "";
+  display: block;
+  height: 1px;
+  background: #ccc;
+  margin: 15px 0;
+}
+
+  </style>
+</head>
+<body>
+
+<h1>Insect Classification</h1>
+<h4>Diah Retno Utami - 4TIB</h4>
+
+<div class="container">
+  <!-- Upload Card -->
+  <div class="card">
+    <h2>Upload Image</h2>
+    <input type="file" id="upload" accept="image/*" onchange="previewImage()"/>
+    <img id="preview" src="" alt="Image Preview"/>
+    <button onclick="uploadImage()">Predict</button>
+  </div>
+
+  <!-- Result Card -->
+  <div class="card">
+    <h2>Prediction Result</h2>
+    <div id="result">No prediction yet.</div>
+    <div id="description"></div>
+    <p class="loading" id="loading">Predicting...</p>
+    <div id="description" style="margin-top: 20px; text-align: justify; font-size: 14px; color: #555;"></div>
+  </div>
+  </div>
+</div>
+
+
+<script>
+function previewImage() {
+  const file = document.getElementById('upload').files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('preview').src = e.target.result;
+  }
+  reader.readAsDataURL(file);
+}
+
+async function uploadImage() {
+  const fileInput = document.getElementById('upload');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert('Please select an image.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('result').innerText = 'No prediction yet.';
+  document.getElementById('description').innerText = '';
+
+  try {
+    const response = await fetch('http://127.0.0.1:8000/predict/', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    document.getElementById('result').innerText = 
+      `CNN Model:\n  Predicted Class: ${result.cnn.predicted_class}\n  Accuracy: ${(result.cnn.confidence * 100).toFixed(2)}%\n\n` +
+      `MobileNetV2 Model:\n  Predicted Class: ${result.mobilenet.predicted_class}\n  Accuracy: ${(result.mobilenet.confidence * 100).toFixed(2)}%`;
+
+    document.getElementById('description').innerText = result.cnn.description;
+
+  } catch (error) {
+    document.getElementById('result').innerText = 'Error during prediction';
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+
+
+</script>
+
+</body>
+</html>
